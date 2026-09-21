@@ -3,3 +3,5 @@ trafilatura==1.9.0
 python-dateutil==2.9.0
 psycopg[binary]==3.2.1
 beautifulsoup4
+scikit-learn
+numpy
