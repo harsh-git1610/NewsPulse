@@ -65,3 +65,99 @@ Example tuning command:
 python cluster.py -t 0.30 -p
 ```
 
+---
+
+## Express.js REST API
+
+The Express API serves cluster data from PostgreSQL and manages background ingestion/clustering jobs.
+
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `DATABASE_URL` | **Yes** | - | PostgreSQL connection string (fails fast on startup if omitted) |
+| `PORT` | No | `3000` | Port for the HTTP server |
+| `FRONTEND_ORIGIN` | No | `*` | Allowed CORS origin (e.g. `https://my-frontend.vercel.app`) |
+| `PYTHON_BIN` | No | `python` (Win) / `python3` (Linux) | Python binary invoked for pipeline child processes |
+
+### Installation & Startup
+
+```bash
+# Install Node.js dependencies
+npm install
+
+# Start the API server
+npm start
+
+# Or in development mode with auto-reload
+npm run dev
+```
+
+### API Endpoints & Example curl Commands
+
+#### 1. Health Check
+```bash
+curl -i http://localhost:3000/health
+# Response: 200 OK
+# {"status":"ok"}
+```
+
+#### 2. List All Clusters
+```bash
+curl -i http://localhost:3000/clusters
+# Response: 200 OK
+# [{"id":1,"label":"nasa, artemis, moon","article_count":4,"start_time":"2026-09-21T18:00:00.000Z","end_time":"2026-09-21T21:30:00.000Z"}]
+```
+
+#### 3. Cluster Details by ID
+```bash
+# Valid ID (articles sorted by published_at ASC)
+curl -i http://localhost:3000/clusters/1
+
+# Invalid ID (non-positive integer) -> 400 Bad Request
+curl -i http://localhost:3000/clusters/abc
+# {"error":"Invalid id"}
+
+# Non-existent cluster -> 404 Not Found
+curl -i http://localhost:3000/clusters/999999
+# {"error":"Cluster not found"}
+```
+
+#### 4. Chart Timeline
+Returns cluster data with `intensity` normalized between 0 and 1:
+```bash
+curl -i http://localhost:3000/timeline
+# Response: 200 OK
+# [{"id":1,"label":"nasa, artemis, moon","start":"2026-09-21T18:00:00.000Z","end":"2026-09-21T21:30:00.000Z","article_count":4,"intensity":1.0}]
+```
+
+#### 5. Trigger Pipeline (Ingestion + Clustering)
+Spawns `ingest.py` followed by `cluster.py` in the background and returns immediately:
+```bash
+curl -i -X POST http://localhost:3000/ingest/trigger
+# Response: 202 Accepted
+# {"jobId":1}
+
+# Concurrent trigger while job is running -> 409 Conflict
+curl -i -X POST http://localhost:3000/ingest/trigger
+# Response: 409 Conflict
+# {"error":"Ingestion already in progress","jobId":1}
+```
+
+#### 6. Polling Ingestion Job Status
+```bash
+# Poll job status using returned jobId
+curl -i http://localhost:3000/ingest/status/1
+# Response: 200 OK
+# {"status":"running","startedAt":"2026-09-22T00:50:00.000Z","finishedAt":null}
+
+# Invalid jobId -> 400 Bad Request
+curl -i http://localhost:3000/ingest/status/abc
+# {"error":"Invalid jobId"}
+
+# Non-existent jobId -> 404 Not Found
+curl -i http://localhost:3000/ingest/status/999999
+# {"error":"Job not found"}
+```
+
+
