@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
 import { TimelineCluster } from '../types';
 
 interface TimelineViewProps {
@@ -39,23 +40,23 @@ export default function TimelineView({
         dataSetRef.current = dataSet;
 
         const options = {
-          height: '420px',
-          minHeight: '350px',
+          height: '440px',
+          minHeight: '380px',
           stack: true,
           showCurrentTime: true,
-          zoomMin: 1000 * 60 * 15, // 15 minutes minimum zoom
-          zoomMax: 1000 * 60 * 60 * 24 * 30, // 30 days maximum zoom
+          orientation: {
+            axis: 'bottom',
+            item: 'bottom',
+          },
+          zoomMin: 1000 * 60 * 15,
+          zoomMax: 1000 * 60 * 60 * 24 * 30,
           horizontalScroll: true,
           selectable: true,
           multiselect: false,
-          tooltip: {
-            followMouse: true,
-            overflowMethod: 'cap',
-          },
           margin: {
             item: {
-              horizontal: 10,
-              vertical: 8,
+              horizontal: 8,
+              vertical: 6,
             },
           },
         };
@@ -80,7 +81,6 @@ export default function TimelineView({
 
     initTimeline();
 
-    // Clean up timeline instance on unmount to prevent leaked DOM listeners
     return () => {
       isMounted = false;
       if (timelineRef.current) {
@@ -90,49 +90,34 @@ export default function TimelineView({
     };
   }, [onSelectCluster]);
 
-  // Update DataSet when cluster data changes (without destroying Timeline)
   useEffect(() => {
-    if (!dataSetRef.current || !isTimelineReady) return;
+    if (!isTimelineReady) return;
 
     const items = clusters.map((cluster) => {
       const startTime = cluster.start ? new Date(cluster.start) : new Date();
       let endTime = cluster.end ? new Date(cluster.end) : startTime;
 
-      // For single-article clusters (start === end), pad end by +30 min for visual width
-      if (startTime.getTime() === endTime.getTime()) {
-        endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
+      if (endTime.getTime() - startTime.getTime() < 3 * 60 * 60 * 1000) {
+        endTime = new Date(startTime.getTime() + 3 * 60 * 60 * 1000);
       }
 
-      // Visual styling scaled by intensity (0.0 - 1.0)
-      const intensityPct = Math.round(cluster.intensity * 100);
       const isSelected = selectedClusterId === cluster.id;
-
-      // Generate dynamic color and border based on intensity and selection
-      const bgOpacity = 0.2 + cluster.intensity * 0.6; // 0.2 to 0.8
-      const borderWidth = 1 + Math.round(cluster.intensity * 3); // 1px to 4px
-
-      const style = `
-        background-color: rgba(59, 130, 246, ${bgOpacity});
-        border: ${borderWidth}px solid ${isSelected ? '#38bdf8' : '#60a5fa'};
-        border-radius: 6px;
-        color: #f8fafc;
-        box-shadow: ${isSelected ? '0 0 12px rgba(56, 189, 248, 0.8)' : `0 2px 6px rgba(0,0,0,0.3)`};
-      `;
+      // Height scaled by intensity between 24px and 120px
+      const blockHeight = Math.round(24 + (cluster.intensity || 0) * 96);
 
       const titleTooltip = `
-        <div style="font-family: sans-serif; font-size: 13px; line-height: 1.4; padding: 4px;">
-          <strong>${cluster.label}</strong><br/>
+        <div style="font-family: var(--font-public-sans), sans-serif; font-size: 12px; line-height: 1.4; padding: 4px;">
+          <strong style="font-family: var(--font-fraunces), serif;">${cluster.label}</strong><br/>
           Articles: ${cluster.article_count}<br/>
-          Intensity: ${intensityPct}%<br/>
-          Start: ${startTime.toLocaleString()}<br/>
-          End: ${endTime.toLocaleString()}
+          Intensity: ${Math.round(cluster.intensity * 100)}%<br/>
+          Span: ${startTime.toLocaleDateString()} ${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleDateString()} ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       `;
 
       const content = `
-        <div class="cluster-item-content">
-          <span class="cluster-label">${cluster.label}</span>
-          <span class="cluster-badge">${cluster.article_count}</span>
+        <div class="editorial-block-content" style="height: ${blockHeight - 6}px;">
+          <span class="editorial-block-title">${cluster.label}</span>
+          <span class="editorial-block-pill">${cluster.article_count}</span>
         </div>
       `;
 
@@ -142,21 +127,29 @@ export default function TimelineView({
         start: startTime,
         end: endTime,
         type: 'range',
-        style,
+        className: `editorial-timeline-item ${isSelected ? 'selected' : ''}`,
+        style: `height: ${blockHeight}px;`,
         title: titleTooltip,
       };
     });
 
-    dataSetRef.current.clear();
-    dataSetRef.current.add(items);
-
-    if (items.length > 0 && timelineRef.current) {
-      timelineRef.current.fit({ animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+    if (timelineRef.current) {
+      try {
+        timelineRef.current.setItems(items);
+        if (items.length > 0) {
+          timelineRef.current.fit({ animation: { duration: 300, easingFunction: 'easeInOutQuad' } });
+        }
+      } catch (e) {
+        console.error('Failed to set timeline items:', e);
+      }
     }
   }, [clusters, isTimelineReady, selectedClusterId]);
 
   return (
     <div className="timeline-wrapper">
+      {/* Baseline ruler */}
+      <div className="timeline-baseline" aria-hidden="true"></div>
+
       {loading && (
         <div className="timeline-skeleton">
           <div className="skeleton-line"></div>
@@ -165,15 +158,16 @@ export default function TimelineView({
             <div className="skeleton-card" style={{ width: '60%' }}></div>
             <div className="skeleton-card" style={{ width: '30%' }}></div>
           </div>
-          <p className="skeleton-text">Loading cluster timeline...</p>
+          <p className="skeleton-text">Interpreting wire timeline…</p>
         </div>
       )}
 
       {!loading && clusters.length === 0 && (
         <div className="timeline-empty">
-          <div className="empty-icon">📊</div>
-          <h3>No clusters yet</h3>
-          <p>Click &quot;Refresh data&quot; above to trigger the news scraper and topic clustering pipeline.</p>
+          <h3 className="empty-heading">No dispatches yet.</h3>
+          <p className="empty-subline">
+            Trigger a refresh to pull the latest wire and group it into stories.
+          </p>
         </div>
       )}
 

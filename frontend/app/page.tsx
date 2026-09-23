@@ -58,9 +58,8 @@ export default function HomePage() {
           setSelectedSources(distinctSources);
         });
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to fetch timeline data';
-      setError(msg);
+    } catch (_err: unknown) {
+      setError("Couldn't reach the timeline. Check that the API is running, then try again.");
       setLoading(false);
     }
   }, []);
@@ -75,14 +74,14 @@ export default function HomePage() {
     onComplete: () => {
       setToastMessage({
         type: 'success',
-        text: 'Ingestion & clustering completed successfully! Timeline updated.',
+        text: 'The wire has been updated with the latest dispatches.',
       });
       fetchTimelineData();
     },
-    onError: (msg) => {
+    onError: () => {
       setToastMessage({
         type: 'error',
-        text: msg,
+        text: 'The last refresh failed partway through. Try again, or check the job log.',
       });
     },
   });
@@ -90,7 +89,7 @@ export default function HomePage() {
   const handleRefreshClick = () => {
     setToastMessage({
       type: 'info',
-      text: 'Triggering ingestion and topic clustering pipeline...',
+      text: 'Pulling the wire and grouping stories…',
     });
     trigger();
   };
@@ -138,11 +137,9 @@ export default function HomePage() {
       />
 
       {error && (
-        <div className="error-banner">
-          <div>
-            <strong>Unable to load timeline:</strong> {error}
-          </div>
-          <button className="btn-retry" onClick={fetchTimelineData}>
+        <div className="wire-banner wire-banner-error">
+          <span className="wire-banner-text">{error}</span>
+          <button className="btn-wire-inline" onClick={fetchTimelineData}>
             Try again
           </button>
         </div>
@@ -164,6 +161,65 @@ export default function HomePage() {
         onSelectCluster={(id) => setSelectedClusterId(id)}
         loading={loading}
       />
+
+      {/* News Storylines Feed */}
+      {!loading && visibleClusters.length > 0 && (
+        <section className="storylines-section">
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">Trending News Storylines</h2>
+              <p className="section-sub">
+                Click any storyline to view all articles and compare sources
+              </p>
+            </div>
+            <span className="section-count">{visibleClusters.length} topics</span>
+          </div>
+
+          <div className="storylines-grid">
+            {visibleClusters.map((cluster) => {
+              const sources = clusterSourcesMap[cluster.id] || [];
+              const dateStr = cluster.start
+                ? new Date(cluster.start).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                  })
+                : '';
+
+              return (
+                <div
+                  key={cluster.id}
+                  className={`storyline-card ${selectedClusterId === cluster.id ? 'active' : ''}`}
+                  onClick={() => setSelectedClusterId(cluster.id)}
+                >
+                  <div className="storyline-meta">
+                    <span className="storyline-badge">Cluster #{cluster.id}</span>
+                    <span className="storyline-articles-badge">
+                      {cluster.article_count} {cluster.article_count === 1 ? 'article' : 'articles'}
+                    </span>
+                    {dateStr && <span className="storyline-date">{dateStr}</span>}
+                  </div>
+
+                  <h3 className="storyline-label">{cluster.label}</h3>
+
+                  <div className="storyline-footer">
+                    <div className="storyline-sources">
+                      {sources.map((s) => (
+                        <span
+                          key={s}
+                          className={`source-mini-badge source-${s.toLowerCase()}`}
+                        >
+                          {s.toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="storyline-action">Read story ↗</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <ClusterModal
         clusterId={selectedClusterId}

@@ -12,7 +12,7 @@ export function useIngestPolling(options: UseIngestPollingOptions = {}) {
   const {
     onComplete,
     onError,
-    maxAttempts = 40, // ~2 minutes with 3s intervals
+    maxAttempts = 120, // ~6 minutes with 3s intervals
     intervalMs = 3000,
   } = options;
 

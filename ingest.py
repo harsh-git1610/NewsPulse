@@ -8,6 +8,11 @@ import trafilatura
 from bs4 import BeautifulSoup
 from dateutil import parser as date_parser
 import psycopg
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -156,6 +161,13 @@ def run_ingestion(db_url: str) -> Dict[str, Any]:
         conn = psycopg.connect(db_url)
         init_db(conn)
 
+        # Pre-fetch existing URLs to avoid re-downloading existing articles
+        existing_urls = set()
+        with conn.cursor() as cur:
+            cur.execute("SELECT url FROM articles WHERE url IS NOT NULL")
+            existing_urls = {row[0] for row in cur.fetchall()}
+        logger.info(f"Found {len(existing_urls)} existing articles in database")
+
         for source, feed_url in FEEDS.items():
             logger.info(f"Fetching feed for {source} at {feed_url}")
             try:
@@ -177,6 +189,10 @@ def run_ingestion(db_url: str) -> Dict[str, Any]:
 
                         if not parsed_entry.get("url"):
                             logger.warning(f"Skipping entry from {source} with no URL")
+                            continue
+
+                        # Skip already ingested articles immediately
+                        if parsed_entry["url"] in existing_urls:
                             continue
 
                         body_text = fetch_article_text(parsed_entry["url"])

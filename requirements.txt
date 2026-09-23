@@ -1,7 +1,8 @@
 feedparser==6.0.11
-trafilatura==1.9.0
+trafilatura>=1.12.0
 python-dateutil==2.9.0
-psycopg[binary]==3.2.1
+psycopg[binary]>=3.2.1
 beautifulsoup4
 scikit-learn
 numpy
+python-dotenv

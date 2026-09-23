@@ -7,6 +7,11 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import psycopg
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -109,7 +114,7 @@ def build_article_corpus(articles: List[Dict[str, Any]]) -> List[str]:
     return corpus
 
 
-def extract_tfidf_matrix(corpus: List[str]) -> Tuple[Any, Optional[np.ndarray]]:
+def extract_tfidf_matrix(corpus: List[str]) -> tuple[Any, Optional[np.ndarray]]:
     """
     Compute TF-IDF matrix using scikit-learn's TfidfVectorizer.
     Handles small corpora (<5 articles) and edge-cases (e.g. n=1 or all stop words) gracefully.
@@ -312,6 +317,82 @@ def run_clustering(
         return result
 
 
+SWEEP_THRESHOLDS = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40]
+
+
+def run_threshold_sweep(
+    thresholds: List[float] = SWEEP_THRESHOLDS,
+    db_url: Optional[str] = None,
+) -> None:
+    """
+    Run diagnostic threshold sweep across all articles to help select an optimal similarity_threshold.
+    Does NOT write to or modify the database.
+    """
+    if db_url is None:
+        db_url = os.environ.get("DATABASE_URL")
+        if not db_url:
+            raise ValueError("Database URL must be provided or set in DATABASE_URL environment variable.")
+
+    logger.info("Starting threshold sweep diagnostic across articles table...")
+
+    with psycopg.connect(db_url) as conn:
+        articles = fetch_articles(conn, recluster_all=True)
+
+    n_articles = len(articles)
+    if n_articles == 0:
+        print("\nNo articles found in database to evaluate.")
+        return
+
+    print(f"\nFetched {n_articles} articles. Building TF-IDF matrix...")
+    corpus = build_article_corpus(articles)
+    tfidf_matrix, _ = extract_tfidf_matrix(corpus)
+
+    if tfidf_matrix is None or n_articles <= 1:
+        print(f"Dataset too small for threshold sweep ({n_articles} articles).")
+        return
+
+    print("Computing pairwise cosine similarity matrix...")
+    sim_matrix = cosine_similarity(tfidf_matrix)
+
+    print("\n" + "=" * 80)
+    print("THRESHOLD SWEEP DIAGNOSTIC REPORT")
+    print(f"Total Articles: {n_articles}")
+    print("=" * 80)
+    header = f"{'Threshold':<11} | {'Clusters':<10} | {'Singletons':<12} | {'Multi-Article':<15} | {'Largest':<9} | {'% In Clusters':<13}"
+    print(header)
+    print("-" * len(header))
+
+    for threshold in thresholds:
+        uf = UnionFind(n_articles)
+        for i in range(n_articles):
+            for j in range(i + 1, n_articles):
+                if sim_matrix[i, j] >= threshold:
+                    uf.union(i, j)
+
+        grouped = collections.defaultdict(list)
+        for i in range(n_articles):
+            root = uf.find(i)
+            grouped[root].append(i)
+
+        num_clusters = len(grouped)
+        sizes = [len(idxs) for idxs in grouped.values()]
+        singletons = sum(1 for s in sizes if s == 1)
+        multi_article = num_clusters - singletons
+        largest_cluster = max(sizes) if sizes else 0
+        multi_article_total_docs = sum(s for s in sizes if s > 1)
+        pct_in_multi = (multi_article_total_docs / n_articles) * 100
+
+        print(
+            f"{threshold:<11.2f} | {num_clusters:<10} | {singletons:<12} | {multi_article:<15} | {largest_cluster:<9} | {pct_in_multi:<11.1f}%"
+        )
+
+    print("=" * 80)
+    print("Interpretation:")
+    print(" - Low threshold (<0.10): Can merge unrelated stories into giant mega-clusters.")
+    print(" - High threshold (>0.30): May split related stories into isolated singletons.")
+    print(" - Sweet spot: High multi-article clusters with balanced cluster sizes.\n")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Cluster news articles by topic using TF-IDF, cosine similarity, and Union-Find."
@@ -335,15 +416,30 @@ def main() -> None:
         help="Only cluster unassigned articles instead of full recompute (default is full recompute)",
     )
     parser.add_argument(
+        "--recluster-all",
+        action="store_true",
+        default=True,
+        help="Perform full recompute across all articles (default behavior)",
+    )
+    parser.add_argument(
         "-p",
         "--print-clusters",
         action="store_true",
         help="Print cluster labels and article titles for threshold tuning",
     )
+    parser.add_argument(
+        "--sweep",
+        action="store_true",
+        help="Run diagnostic threshold sweep across [0.05..0.40] without writing to database",
+    )
 
     args = parser.parse_args()
 
     try:
+        if args.sweep:
+            run_threshold_sweep(db_url=args.db_url)
+            return
+
         run_clustering(
             similarity_threshold=args.threshold,
             db_url=args.db_url,

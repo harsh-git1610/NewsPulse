@@ -20,52 +20,44 @@ export default function Header({
   onDismissToast,
 }: HeaderProps) {
   return (
-    <header className="app-header">
-      <div className="header-container">
-        <div className="brand-group">
-          <div className="brand-logo">🌐</div>
+    <header className="masthead">
+      <div className="masthead-main">
+        <div className="masthead-brand">
+          <span className="masthead-mark">✦</span>
           <div>
-            <h1 className="brand-title">NewsPulse</h1>
-            <p className="brand-subtitle">Topic Cluster Timeline</p>
+            <h1 className="masthead-title">NewsPulse</h1>
+            <p className="masthead-subtitle">Topic Cluster Timeline</p>
           </div>
           {clusterCount > 0 && (
-            <span className="stats-pill">{clusterCount} clusters</span>
+            <span className="masthead-count">{clusterCount} clusters</span>
           )}
         </div>
 
-        <div className="header-actions">
+        <div className="masthead-actions">
           <button
             type="button"
-            className={`btn-refresh ${isPolling ? 'loading' : ''}`}
+            className={`btn-wire ${isPolling ? 'polling' : ''}`}
             onClick={onRefresh}
             disabled={isPolling}
-            title={isPolling ? 'Ingestion pipeline is running...' : 'Run scraper and re-cluster'}
+            title={isPolling ? 'Ingestion pipeline in progress' : 'Trigger ingestion and re-cluster'}
           >
             {isPolling ? (
               <>
-                <span className="btn-spinner"></span>
-                <span>Updating news...</span>
+                <span className="pulse-dot"></span>
+                <span>Fetching wire…</span>
               </>
             ) : (
-              <>
-                <span className="btn-icon">⚡</span>
-                <span>Refresh data</span>
-              </>
+              <span>Refresh data</span>
             )}
           </button>
         </div>
       </div>
 
       {toastMessage && (
-        <div className={`toast-banner toast-${toastMessage.type}`}>
-          <span className="toast-icon">
-            {toastMessage.type === 'success' && '✓'}
-            {toastMessage.type === 'error' && '✕'}
-            {toastMessage.type === 'info' && 'ℹ'}
-          </span>
-          <span className="toast-text">{toastMessage.text}</span>
+        <div className={`wire-banner wire-banner-${toastMessage.type}`}>
+          <span className="wire-banner-text">{toastMessage.text}</span>
           {onDismissToast && (
-            <button className="toast-close" onClick={onDismissToast} aria-label="Dismiss">
+            <button className="wire-banner-close" onClick={onDismissToast} aria-label="Dismiss">
               ✕
             </button>
           )}

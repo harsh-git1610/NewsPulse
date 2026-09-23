@@ -1,631 +1,860 @@
+@import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
+
+/* ==========================================================================
+   NewsPulse Design System Tokens
+   ========================================================================== */
 :root {
-  --bg-main: #0b0f19;
-  --bg-card: #131b2e;
-  --bg-card-hover: #1c2742;
-  --border-subtle: #23304b;
-  --border-active: #38bdf8;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --accent-blue: #3b82f6;
-  --accent-cyan: #06b6d4;
-  --accent-glow: rgba(56, 189, 248, 0.25);
+  --ink: #1C1B18;                  /* Background */
+  --paper: #F3EFE6;                /* Primary text */
+  --wire: #C4432E;                 /* Single accent — live/active/error states ONLY */
+  --signal: #5C8AA0;               /* Secondary accent — source badges only */
+  --rule: rgba(243, 239, 230, 0.14); /* All dividers — replaces borders/box-shadows */
+  --dim: #8B8577;                  /* Secondary text */
 }
 
-* {
+/* Reset & Base Styles */
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  background-color: var(--ink);
+  color: var(--paper);
+}
+
 body {
-  background-color: var(--bg-main);
-  color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-public-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
   line-height: 1.5;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Container */
+/* Typography Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 600;
+  color: var(--paper);
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Maximum border radius is 4px across the whole application */
+* {
+  border-radius: 0;
+}
+
+/* Page Layout */
 .page-container {
-  max-width: 1360px;
+  max-width: 1380px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1.5rem 2rem 4rem 2rem;
   display: flex;
   flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* ==========================================================================
+   Masthead (Header.tsx)
+   Restructure as a masthead, not a card: no background panel, logo mark +
+   "NewsPulse" in Fraunces 600, "Topic Cluster Timeline" in Public Sans dim,
+   single hairline rule beneath whole header, no padding-boxed container around it.
+   ========================================================================== */
+.masthead {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-bottom: 1px solid var(--rule);
+  padding: 0 0 1.25rem 0;
+  background: transparent;
+}
+
+.masthead-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
   gap: 1.5rem;
 }
 
-/* Header */
-.app-header {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 1rem 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+.masthead-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
 }
 
-.header-container {
+.masthead-mark {
+  color: var(--wire);
+  font-size: 1.35rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.masthead-title {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 600;
+  font-size: 1.85rem;
+  line-height: 1.1;
+  color: var(--paper);
+  letter-spacing: -0.02em;
+}
+
+.masthead-subtitle {
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--dim);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 0.2rem;
+}
+
+.masthead-count {
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--dim);
+  border-left: 1px solid var(--rule);
+  padding-left: 0.85rem;
+  margin-left: 0.25rem;
+}
+
+.masthead-actions {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
   gap: 1rem;
 }
 
-.brand-group {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.brand-logo {
-  font-size: 1.75rem;
-  background: rgba(56, 189, 248, 0.1);
-  padding: 0.4rem 0.6rem;
-  border-radius: 8px;
-  border: 1px solid rgba(56, 189, 248, 0.2);
-}
-
-.brand-title {
-  font-size: 1.35rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #f8fafc 40%, #38bdf8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.brand-subtitle {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-.stats-pill {
-  background: rgba(59, 130, 246, 0.15);
-  color: #93c5fd;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.65rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  margin-left: 0.5rem;
-}
-
-/* Buttons */
-.btn-refresh {
-  background: linear-gradient(135deg, #2563eb, #0284c7);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 0.55rem 1.25rem;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
+/* ==========================================================================
+   Wire Button (Refresh data)
+   Flat, no gradient — background transparent, 1px border in --wire, text in --wire,
+   background fills solid --wire with --ink text on hover. While polling, replace
+   label with "Fetching wire…" and add a small dot before it that pulses via
+   CSS animation ONLY while isPolling is true.
+   ========================================================================== */
+.btn-wire {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+  background: transparent;
+  border: 1px solid var(--wire);
+  color: var(--wire);
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.45rem 1rem;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.btn-refresh:hover:not(:disabled) {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.5);
-  transform: translateY(-1px);
+.btn-wire:hover:not(:disabled) {
+  background: var(--wire);
+  color: var(--ink);
 }
 
-.btn-refresh:disabled {
-  opacity: 0.65;
+.btn-wire:disabled {
+  opacity: 0.85;
   cursor: not-allowed;
-  transform: none;
 }
 
-.btn-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
+/* Small dot that pulses via CSS animation ONLY while isPolling is true */
+.btn-wire .pulse-dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  background-color: var(--wire);
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+.btn-wire.polling .pulse-dot {
+  animation: wire-dot-pulse 1.2s infinite ease-in-out;
+}
+
+@keyframes wire-dot-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.4;
   }
 }
 
-/* Toast */
-.toast-banner {
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  font-size: 0.875rem;
-}
-
-.toast-success {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #6ee7b7;
-}
-
-.toast-error {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
-}
-
-.toast-info {
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #93c5fd;
-}
-
-.toast-close {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: inherit;
+.btn-wire-inline {
+  display: inline-block;
+  background: transparent;
+  border: 1px solid var(--wire);
+  color: var(--wire);
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.25rem 0.65rem;
   cursor: pointer;
-  opacity: 0.7;
-}
-.toast-close:hover {
-  opacity: 1;
+  border-radius: 2px;
+  text-transform: uppercase;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-/* Filters */
-.filter-bar {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 0.85rem 1.25rem;
+.btn-wire-inline:hover {
+  background: var(--wire);
+  color: var(--ink);
+}
+
+/* ==========================================================================
+   Status & Error Banners
+   No rounded card with tinted background — a left border in --wire (3px solid),
+   flat --ink background, text in --paper, no fill/tint.
+   ========================================================================== */
+.wire-banner {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--wire);
+  border-radius: 0;
+  padding: 0.75rem 1rem;
+  color: var(--paper);
+  font-size: 0.85rem;
   gap: 1rem;
 }
 
-.filter-header {
+.wire-banner-text {
+  font-family: var(--font-public-sans), sans-serif;
+  color: var(--paper);
+}
+
+.wire-banner-close {
+  background: transparent;
+  border: none;
+  color: var(--dim);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.2rem;
+  line-height: 1;
+}
+
+.wire-banner-close:hover {
+  color: var(--paper);
+}
+
+/* ==========================================================================
+   Source Filter (components/SourceFilter.tsx)
+   Replace checkbox-in-box styling with inline text toggles: each source name
+   as plain text, --dim when inactive, --paper with a --wire underline when active,
+   separated by a hairline vertical rule between items, no checkbox squares.
+   ========================================================================== */
+.source-filter-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-}
-
-.filter-title {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  color: var(--text-muted);
-}
-
-.filter-text-btn {
-  background: none;
-  border: none;
-  color: #38bdf8;
-  font-size: 0.75rem;
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0;
-}
-.filter-text-btn:hover {
-  color: #7dd3fc;
-}
-
-.filter-chips {
-  display: flex;
   flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.8rem;
+}
+
+.source-filter-prefix {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
-.filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-subtle);
-  font-size: 0.75rem;
+.source-filter-label {
+  font-family: var(--font-public-sans), sans-serif;
   font-weight: 600;
-  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+
+.source-toggle-all-btn {
+  background: transparent;
+  border: none;
+  color: var(--dim);
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.75rem;
   cursor: pointer;
+  padding: 0;
+}
+
+.source-toggle-all-btn:hover {
+  color: var(--paper);
+}
+
+.source-toggles {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.source-separator {
+  color: var(--rule);
+  font-weight: 300;
   user-select: none;
-  transition: all 0.15s ease;
 }
 
-.filter-chip:hover {
-  background: rgba(255, 255, 255, 0.08);
+.source-toggle-item {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0;
+  transition: color 0.15s ease;
 }
 
-.filter-chip.active {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: rgba(56, 189, 248, 0.4);
-  color: var(--text-primary);
+.source-toggle-item.inactive {
+  color: var(--dim);
 }
 
-.chip-checkbox {
-  display: none;
+.source-toggle-item.inactive:hover {
+  color: var(--paper);
 }
 
-.chip-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: var(--text-muted);
+.source-toggle-item.active {
+  color: var(--paper);
+  border-bottom: 2px solid var(--wire);
 }
 
-.source-dot-bbc { background-color: #ef4444; }
-.source-dot-npr { background-color: #3b82f6; }
-.source-dot-guardian { background-color: #f59e0b; }
-.source-dot-nyt { background-color: #10b981; }
-.source-dot-aljazeera { background-color: #8b5cf6; }
-
-/* Timeline Card */
+/* ==========================================================================
+   Timeline Container & Visual Baseline (components/TimelineView.tsx)
+   A single 1px horizontal line in --rule running the full width, positioned
+   at a fixed vertical point in the container.
+   Cluster blocks rise upward from this baseline, height scaled by intensity
+   (min height ~24px, max ~120px) rather than glow/opacity.
+   Cluster block color: --signal fill at low opacity with a --signal 1px top
+   border; on hover, border becomes --wire.
+   Cluster label (Fraunces, small size) sits above each block, truncated with ellipsis.
+   ========================================================================== */
 .timeline-wrapper {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 1rem;
-  min-height: 440px;
   position: relative;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+  min-height: 420px;
+}
+
+/* Baseline ruler line running full width */
+.timeline-baseline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 50px; /* Aligns right at the top of vis-timeline bottom axis */
+  height: 1px;
+  background-color: var(--rule);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .vis-container {
   width: 100%;
+  height: 440px;
 }
 
-/* Cluster item styling in timeline */
-.cluster-item-content {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 6px;
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.cluster-label {
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.cluster-badge {
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 9999px;
-  padding: 1px 6px;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-/* Vis-timeline Dark Theme Overrides */
-.vis-timeline {
-  border: 1px solid var(--border-subtle) !important;
-  background-color: #0d1322 !important;
-  font-family: inherit !important;
-  border-radius: 8px;
-}
-
-.vis-time-axis .vis-text {
-  color: var(--text-secondary) !important;
-  font-size: 11px !important;
-}
-
-.vis-time-axis .vis-grid.vis-minor {
-  border-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-.vis-time-axis .vis-grid.vis-major {
-  border-color: rgba(255, 255, 255, 0.12) !important;
-}
-
-.vis-current-time {
-  background-color: #ef4444 !important;
-  width: 2px !important;
-}
-
-.vis-item {
-  cursor: pointer !important;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-
-.vis-item:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.2);
-}
-
-/* Empty & Skeleton States */
+/* Timeline Empty & Skeleton States */
 .timeline-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 380px;
+  min-height: 380px;
   text-align: center;
-  gap: 0.5rem;
-  color: var(--text-secondary);
+  padding: 3rem 1.5rem;
 }
 
-.empty-icon {
-  font-size: 3rem;
-  opacity: 0.8;
+.empty-heading {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--paper);
+  margin-bottom: 0.5rem;
+}
+
+.empty-subline {
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.85rem;
+  color: var(--dim);
+  max-width: 440px;
 }
 
 .timeline-skeleton {
-  padding: 2rem;
+  padding: 2.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-height: 380px;
   justify-content: center;
-  height: 380px;
 }
 
 .skeleton-line {
-  height: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 4px;
+  height: 1px;
+  background: var(--rule);
   width: 100%;
-  animation: pulse 1.5s infinite ease-in-out;
 }
 
 .skeleton-grid {
   display: flex;
-  flex-direction: column;
   gap: 1rem;
+  align-items: flex-end;
+  height: 140px;
 }
 
 .skeleton-card {
-  height: 36px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-  animation: pulse 1.5s infinite ease-in-out;
+  background: rgba(243, 239, 230, 0.05);
+  border-top: 1px solid var(--rule);
+  height: 80px;
 }
 
 .skeleton-text {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  text-align: center;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 0.2; }
-}
-
-/* Error banner */
-.error-banner {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  border-radius: 12px;
-  padding: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  color: #fca5a5;
-}
-
-.btn-retry {
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #fff;
-  padding: 0.4rem 0.9rem;
-  border-radius: 6px;
+  font-family: var(--font-public-sans), sans-serif;
   font-size: 0.8rem;
-  font-weight: 600;
+  color: var(--dim);
+}
+
+/* ==========================================================================
+   vis-timeline Theming & Overrides
+   Flat surfaces, no shadows, no glows, hairline borders using --rule
+   ========================================================================== */
+.vis-timeline {
+  border: none !important;
+  background: transparent !important;
+  font-family: var(--font-public-sans), sans-serif !important;
+}
+
+.vis-panel.vis-background,
+.vis-panel.vis-center,
+.vis-panel.vis-bottom,
+.vis-panel.vis-top {
+  background: transparent !important;
+  border-color: var(--rule) !important;
+}
+
+.vis-time-axis .vis-text {
+  color: var(--dim) !important;
+  font-family: var(--font-public-sans), sans-serif !important;
+  font-size: 11px !important;
+  padding-top: 6px !important;
+}
+
+.vis-time-axis .vis-grid.vis-minor {
+  border-width: 1px !important;
+  border-color: rgba(243, 239, 230, 0.06) !important;
+}
+
+.vis-time-axis .vis-grid.vis-major {
+  border-width: 1px !important;
+  border-color: var(--rule) !important;
+}
+
+.vis-current-time {
+  background-color: var(--wire) !important;
+  width: 1px !important;
+  z-index: 5 !important;
+}
+
+/* Vis-timeline item styling:
+   Cluster blocks rise upward from baseline.
+   Color: --signal fill at low opacity with a --signal 1px top border;
+   on hover, border becomes --wire. */
+.vis-item.editorial-timeline-item {
+  background-color: rgba(92, 138, 160, 0.16) !important;
+  border: none !important;
+  border-top: 1px solid var(--signal) !important;
+  border-radius: 2px 2px 0 0 !important;
+  box-shadow: none !important;
   cursor: pointer;
-}
-.btn-retry:hover {
-  background: rgba(239, 68, 68, 0.35);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-/* Modal */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-  padding: 1.5rem;
+.vis-item.editorial-timeline-item:hover {
+  border-top: 1px solid var(--wire) !important;
+  background-color: rgba(196, 67, 46, 0.12) !important;
 }
 
-.modal-card {
-  background: #111827;
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  width: 100%;
-  max-width: 760px;
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-  animation: modalEnter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+.vis-item.editorial-timeline-item.vis-selected,
+.vis-item.editorial-timeline-item.selected {
+  border-top: 2px solid var(--wire) !important;
+  background-color: rgba(196, 67, 46, 0.22) !important;
 }
 
-@keyframes modalEnter {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+.vis-item .vis-item-overflow {
+  overflow: visible !important;
 }
 
-.modal-header {
+.vis-item .vis-item-content {
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+.editorial-block-content {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--border-subtle);
-  gap: 1rem;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 6px;
+  overflow: hidden;
 }
 
-.modal-title-wrap {
+/* Cluster label: Fraunces, small size, truncated with ellipsis if overflowing */
+.editorial-block-title {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--paper);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  letter-spacing: -0.01em;
+}
+
+.editorial-block-pill {
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 10px;
+  color: var(--dim);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Cluster Detail Drawer (components/ClusterModal.tsx)
+   Slides in from the right edge, fixed height 100vh, width ~420px,
+   background --ink, left border 1px solid --rule (no shadow).
+   Close via X in top-right or clicking outside.
+   Hairline rule between articles (no individual bordered cards).
+   Source shown as small --signal-colored label, not a pill/badge.
+   ========================================================================== */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 27, 24, 0.6);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer-panel {
+  width: 420px;
+  max-width: 90vw;
+  height: 100vh;
+  background: var(--ink);
+  border-left: 1px solid var(--rule);
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  animation: drawerSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
-.modal-badge {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  color: #38bdf8;
+@keyframes drawerSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
-.modal-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.modal-close-btn {
-  background: rgba(255, 255, 255, 0.06);
-  border: none;
-  color: var(--text-secondary);
-  font-size: 1.1rem;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-}
-
-.modal-close-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--text-primary);
-}
-
-.modal-body {
-  padding: 1.5rem;
-  overflow-y: auto;
-}
-
-.modal-loading,
-.modal-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 1rem;
-  gap: 1rem;
-  color: var(--text-secondary);
-}
-
-.spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid rgba(56, 189, 248, 0.2);
-  border-top-color: #38bdf8;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-.article-list-header {
+.drawer-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  align-items: flex-start;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--rule);
+  gap: 1rem;
 }
 
-.article-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.article-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  transition: all 0.15s ease;
-}
-
-.article-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(56, 189, 248, 0.3);
-}
-
-.article-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.75rem;
-}
-
-.source-badge {
-  font-weight: 700;
-  font-size: 0.65rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 4px;
-  letter-spacing: 0.03em;
-}
-
-.source-bbc { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
-.source-npr { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
-.source-guardian { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
-.source-nyt { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
-.source-aljazeera { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.4); }
-
-.article-date {
-  color: var(--text-muted);
-}
-
-.article-title {
-  font-size: 0.95rem;
+.drawer-kicker {
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: var(--text-primary);
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.drawer-title {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--paper);
+  line-height: 1.3;
+}
+
+.drawer-close {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--dim);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 2px;
+  flex-shrink: 0;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.drawer-close:hover {
+  color: var(--paper);
+  border-color: var(--paper);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.drawer-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--dim);
+  padding: 2rem 0;
+  font-size: 0.85rem;
+}
+
+.drawer-meta-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 0.5rem;
+}
+
+.drawer-article-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hairline rule between articles, no individual bordered cards */
+.drawer-article-item {
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.drawer-article-item:last-child {
+  border-bottom: none;
+}
+
+.article-byline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+}
+
+/* Source shown as a small --signal-colored label, not a pill/badge with background fill */
+.article-source-tag {
+  color: var(--signal);
+  font-family: var(--font-public-sans), sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  background: transparent;
+  padding: 0;
+}
+
+.article-timestamp {
+  color: var(--dim);
+}
+
+.article-headline {
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--paper);
   line-height: 1.4;
 }
 
-.article-actions {
-  margin-top: 0.25rem;
-}
-
-.article-link {
-  color: #38bdf8;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-decoration: none;
+.article-ext-link {
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.78rem;
+  color: var(--dim);
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   transition: color 0.15s ease;
+  width: fit-content;
+  margin-top: 0.25rem;
 }
 
-.article-link:hover {
-  color: #7dd3fc;
+.article-ext-link:hover {
+  color: var(--paper);
   text-decoration: underline;
 }
 
-.modal-empty-filter {
-  padding: 2rem;
+.drawer-empty {
+  padding: 2rem 0;
+  color: var(--dim);
+  font-size: 0.85rem;
   text-align: center;
-  color: var(--text-muted);
-  font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   Storylines Feed Section (Flat, hairline borders, no shadows/glows)
+   ========================================================================== */
+.storylines-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-top: 1rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.75rem;
+}
+
+.section-title {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.section-sub {
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.82rem;
+  color: var(--dim);
+  margin-top: 0.2rem;
+}
+
+.section-count {
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.78rem;
+  color: var(--dim);
+}
+
+.storylines-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.storyline-card {
+  background: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.storyline-card:hover {
+  border-color: var(--dim);
+}
+
+.storyline-card.active {
+  border-color: var(--wire);
+}
+
+.storyline-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+  color: var(--dim);
+  letter-spacing: 0.04em;
+}
+
+.storyline-badge {
+  text-transform: uppercase;
+}
+
+.storyline-articles-badge {
+  border-left: 1px solid var(--rule);
+  padding-left: 0.6rem;
+}
+
+.storyline-date {
+  border-left: 1px solid var(--rule);
+  padding-left: 0.6rem;
+}
+
+.storyline-label {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--paper);
+}
+
+.storyline-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--rule);
+  padding-top: 0.75rem;
+  margin-top: auto;
+}
+
+.storyline-sources {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Source badge: small --signal-colored label, no background fill */
+.source-mini-badge {
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--signal);
+  letter-spacing: 0.04em;
+  background: transparent;
+  padding: 0;
+}
+
+.storyline-action {
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.75rem;
+  color: var(--dim);
+}
+
+.storyline-card:hover .storyline-action {
+  color: var(--paper);
 }

@@ -55,14 +55,15 @@ python cluster.py
 
 ### Options & Threshold Tuning
 
+- `--sweep`: Run a threshold sweep diagnostic across `[0.05..0.40]` without modifying the database.
 - `-p`, `--print-clusters`: Inspect cluster labels and article titles for manual threshold tuning.
 - `-t <float>`, `--threshold <float>`: Configure similarity threshold (default: `0.25`).
 - `--unassigned-only`: Only cluster articles that have not yet been assigned to any cluster.
 - `--db-url <url>`: Override the `DATABASE_URL` environment variable.
 
-Example tuning command:
+Example diagnostic sweep command:
 ```bash
-python cluster.py -t 0.30 -p
+python cluster.py --sweep
 ```
 
 ---

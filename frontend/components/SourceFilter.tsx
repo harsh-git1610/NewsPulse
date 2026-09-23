@@ -24,37 +24,32 @@ export default function SourceFilter({
   const allSelected = availableSources.every((s) => selectedSources.includes(s));
 
   return (
-    <div className="filter-bar">
-      <div className="filter-header">
-        <span className="filter-title">Sources</span>
-        <div className="filter-actions">
-          <button
-            type="button"
-            className="filter-text-btn"
-            onClick={allSelected ? onDeselectAll : onSelectAll}
-          >
-            {allSelected ? 'Clear all' : 'Select all'}
-          </button>
-        </div>
+    <div className="source-filter-row">
+      <div className="source-filter-prefix">
+        <span className="source-filter-label">WIRE SOURCES</span>
+        <button
+          type="button"
+          className="source-toggle-all-btn"
+          onClick={allSelected ? onDeselectAll : onSelectAll}
+        >
+          [{allSelected ? 'clear' : 'all'}]
+        </button>
       </div>
 
-      <div className="filter-chips">
-        {availableSources.map((source) => {
+      <div className="source-toggles">
+        {availableSources.map((source, index) => {
           const isChecked = selectedSources.includes(source);
           return (
-            <label
-              key={source}
-              className={`filter-chip ${isChecked ? 'active' : ''}`}
-            >
-              <input
-                type="checkbox"
-                checked={isChecked}
-                onChange={() => onToggleSource(source)}
-                className="chip-checkbox"
-              />
-              <span className={`chip-dot source-dot-${source}`}></span>
-              <span className="chip-label">{source.toUpperCase()}</span>
-            </label>
+            <React.Fragment key={source}>
+              {index > 0 && <span className="source-separator" aria-hidden="true">|</span>}
+              <button
+                type="button"
+                className={`source-toggle-item ${isChecked ? 'active' : 'inactive'}`}
+                onClick={() => onToggleSource(source)}
+              >
+                {source.toUpperCase()}
+              </button>
+            </React.Fragment>
           );
         })}
       </div>

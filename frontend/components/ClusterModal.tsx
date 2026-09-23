@@ -69,38 +69,38 @@ export default function ClusterModal({
       : detail?.articles || [];
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div
-        className="modal-card"
+    <div className="drawer-overlay" onClick={onClose}>
+      <aside
+        className="drawer-panel"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
-        <div className="modal-header">
-          <div className="modal-title-wrap">
-            <span className="modal-badge">Cluster #{clusterId}</span>
-            <h2 className="modal-title">
-              {detail ? detail.label : `Loading Cluster #${clusterId}...`}
+        <div className="drawer-header">
+          <div>
+            <span className="drawer-kicker">DISPATCH #{clusterId}</span>
+            <h2 className="drawer-title">
+              {detail ? detail.label : `Loading Cluster #${clusterId}…`}
             </h2>
           </div>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">
+          <button className="drawer-close" onClick={onClose} aria-label="Close panel">
             ✕
           </button>
         </div>
 
-        <div className="modal-body">
+        <div className="drawer-body">
           {loading && (
-            <div className="modal-loading">
-              <div className="spinner"></div>
-              <p>Fetching articles for this cluster...</p>
+            <div className="drawer-loading">
+              <span className="pulse-dot"></span>
+              <p>Fetching dispatch articles…</p>
             </div>
           )}
 
           {error && (
-            <div className="modal-error">
-              <p>⚠️ {error}</p>
+            <div className="wire-banner wire-banner-error">
+              <p>{error}</p>
               <button
-                className="btn-retry"
+                className="btn-wire-inline"
                 onClick={() => {
                   setLoading(true);
                   setError(null);
@@ -121,20 +121,18 @@ export default function ClusterModal({
           )}
 
           {!loading && !error && detail && (
-            <div className="article-list-container">
-              <div className="article-list-header">
-                <span className="article-count-label">
-                  Showing {displayedArticles.length} of {detail.articles.length} articles
-                </span>
-                <span className="article-sort-hint">Sorted chronologically (oldest to newest)</span>
+            <div className="drawer-articles">
+              <div className="drawer-meta-line">
+                <span>{displayedArticles.length} of {detail.articles.length} articles</span>
+                <span>Chronological</span>
               </div>
 
               {displayedArticles.length === 0 ? (
-                <div className="modal-empty-filter">
-                  <p>No articles match the currently selected source filters.</p>
+                <div className="drawer-empty">
+                  <p>No articles match the selected wire filters.</p>
                 </div>
               ) : (
-                <div className="article-list">
+                <ul className="drawer-article-list">
                   {displayedArticles.map((article) => {
                     const pubDate = article.published_at
                       ? new Date(article.published_at).toLocaleString(undefined, {
@@ -144,33 +142,29 @@ export default function ClusterModal({
                       : 'Unknown date';
 
                     return (
-                      <div key={article.id} className="article-card">
-                        <div className="article-meta">
-                          <span className={`source-badge source-${article.source.toLowerCase()}`}>
-                            {article.source.toUpperCase()}
-                          </span>
-                          <span className="article-date">{pubDate}</span>
+                      <li key={article.id} className="drawer-article-item">
+                        <div className="article-byline">
+                          <span className="article-source-tag">{article.source.toUpperCase()}</span>
+                          <span className="article-timestamp">{pubDate}</span>
                         </div>
-                        <h4 className="article-title">{article.title}</h4>
-                        <div className="article-actions">
-                          <a
-                            href={article.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="article-link"
-                          >
-                            Read original article ↗
-                          </a>
-                        </div>
-                      </div>
+                        <h4 className="article-headline">{article.title}</h4>
+                        <a
+                          href={article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="article-ext-link"
+                        >
+                          View wire source ↗
+                        </a>
+                      </li>
                     );
                   })}
-                </div>
+                </ul>
               )}
             </div>
           )}
         </div>
-      </div>
+      </aside>
     </div>
   );
 }
