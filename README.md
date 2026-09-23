@@ -160,4 +160,50 @@ curl -i http://localhost:3000/ingest/status/999999
 # {"error":"Job not found"}
 ```
 
+---
+
+## Next.js Timeline Frontend (`frontend/`)
+
+A Next.js (App Router, TypeScript) dashboard visualizes topic clusters over an interactive timeline using `vis-timeline`.
+
+### Local Setup & Development
+
+```bash
+cd frontend
+
+# Install frontend dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) (or whichever port Next.js binds to, e.g. 3001 if backend runs on 3000).
+
+### Build & Production Deployment (e.g. Vercel)
+
+> [!IMPORTANT]
+> **Build-Time Environment Variable:**
+> `NEXT_PUBLIC_API_URL` is baked into the frontend JavaScript bundle at **build time**.
+> When deploying to platforms like Vercel, you **must set `NEXT_PUBLIC_API_URL` in the Vercel Project Settings (Environment Variables)** prior to triggering the build. Setting it only in a local `.env` or changing it after build will not take effect without a redeployment.
+
+### Features & Semantics
+
+1. **Interactive Timeline**:
+   - Clusters span `start` -> `end` dates of their constituent articles.
+   - For single-article clusters (`start === end`), the end is visually padded by +30 minutes so it renders as a visible block rather than a zero-width line.
+   - Block opacity and borders dynamically scale according to cluster `intensity` (0.0 to 1.0).
+   - Clicking a cluster block opens the details modal.
+
+2. **Source Filtering Semantics**:
+   - Sources are derived dynamically from the ingested articles (no hardcoded list).
+   - **Inclusive filtering**: A timeline cluster remains visible if **any** of its member articles originate from a currently selected source.
+   - Opening a cluster modal additionally filters the member article list to match active source selections.
+
+3. **Ingestion Polling Lifecycle**:
+   - The "Refresh data" button calls `POST /ingest/trigger`.
+   - If the backend returns `409 Conflict`, the frontend attaches to the existing `jobId` rather than failing.
+   - Polls `GET /ingest/status/:jobId` every 3 seconds, disabling the button and showing a spinner.
+   - Automatically stops polling when completed (refetching timeline), when failed (displaying error toast), on component unmount (avoiding orphaned intervals), or upon reaching a 40-attempt (~2 min) timeout.
+
+
 
