@@ -765,6 +765,53 @@ a {
   color: var(--dim);
 }
 
+/* Storylines Toolbar: Window, Scope, Sort */
+.storylines-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.78rem;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.toolbar-label {
+  font-family: var(--font-public-sans), sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+  font-size: 0.72rem;
+}
+
+.toolbar-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0;
+  color: var(--dim);
+  transition: color 0.15s ease;
+}
+
+.toolbar-btn:hover {
+  color: var(--paper);
+}
+
+.toolbar-btn.active {
+  color: var(--paper);
+  border-bottom: 2px solid var(--wire);
+}
+
 .storylines-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));

@@ -109,21 +109,86 @@ export default function HomePage() {
     setSelectedSources([]);
   };
 
-  // Filter clusters: A cluster remains visible if ANY of its member sources match the selected sources.
-  // If cluster sources are not yet resolved, keep cluster visible by default.
+  // Filter & sorting states
+  const [timeFilter, setTimeFilter] = useState<'all' | 'today' | '24h'>('all');
+  const [scopeFilter, setScopeFilter] = useState<'all' | 'multi'>('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'largest' | 'chronological'>('newest');
+
+  // Today label calculation
+  const todayDateStr = useMemo(() => {
+    return new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase();
+  }, []);
+
+  // Filter clusters: source matching, time window, and scope (multi-article)
   const visibleClusters = useMemo(() => {
-    if (availableSources.length === 0 || selectedSources.length === availableSources.length) {
-      return clusters;
+    const now = new Date();
+    const isSameCalendarDay = (d1: Date, d2: Date) =>
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate();
+    const past24hCutoff = Date.now() - 24 * 60 * 60 * 1000;
+
+    let result = clusters;
+
+    // 1. Source filter
+    if (availableSources.length > 0 && selectedSources.length < availableSources.length) {
+      result = result.filter((cluster) => {
+        const sources = clusterSourcesMap[cluster.id];
+        if (!sources || sources.length === 0) return true;
+        return sources.some((s) => selectedSources.includes(s));
+      });
     }
 
-    return clusters.filter((cluster) => {
-      const sources = clusterSourcesMap[cluster.id];
-      if (!sources || sources.length === 0) {
-        return true; // Keep visible while loading
+    // 2. Time window filter
+    if (timeFilter === 'today') {
+      result = result.filter((cluster) => {
+        const clusterStart = cluster.start ? new Date(cluster.start) : null;
+        const clusterEnd = cluster.end ? new Date(cluster.end) : null;
+        return (
+          (clusterEnd && isSameCalendarDay(clusterEnd, now)) ||
+          (clusterStart && isSameCalendarDay(clusterStart, now))
+        );
+      });
+    } else if (timeFilter === '24h') {
+      result = result.filter((cluster) => {
+        const clusterStart = cluster.start ? new Date(cluster.start) : null;
+        const clusterEnd = cluster.end ? new Date(cluster.end) : null;
+        return (
+          (clusterEnd && clusterEnd.getTime() >= past24hCutoff) ||
+          (clusterStart && clusterStart.getTime() >= past24hCutoff)
+        );
+      });
+    }
+
+    // 3. Scope filter (Developing stories with 2+ articles vs all)
+    if (scopeFilter === 'multi') {
+      result = result.filter((cluster) => cluster.article_count > 1);
+    }
+
+    // 4. Sort order
+    return [...result].sort((a, b) => {
+      if (sortBy === 'newest') {
+        const timeA = new Date(a.end || a.start || 0).getTime();
+        const timeB = new Date(b.end || b.start || 0).getTime();
+        return timeB - timeA;
       }
-      return sources.some((s) => selectedSources.includes(s));
+      if (sortBy === 'largest') {
+        return b.article_count - a.article_count;
+      }
+      // chronological
+      const timeA = new Date(a.start || a.end || 0).getTime();
+      const timeB = new Date(b.start || b.end || 0).getTime();
+      return timeA - timeB;
     });
-  }, [clusters, clusterSourcesMap, availableSources, selectedSources]);
+  }, [
+    clusters,
+    clusterSourcesMap,
+    availableSources,
+    selectedSources,
+    timeFilter,
+    scopeFilter,
+    sortBy,
+  ]);
 
   return (
     <main className="page-container">
@@ -163,7 +228,7 @@ export default function HomePage() {
       />
 
       {/* News Storylines Feed */}
-      {!loading && visibleClusters.length > 0 && (
+      {!loading && (
         <section className="storylines-section">
           <div className="section-header">
             <div>
@@ -175,49 +240,132 @@ export default function HomePage() {
             <span className="section-count">{visibleClusters.length} topics</span>
           </div>
 
-          <div className="storylines-grid">
-            {visibleClusters.map((cluster) => {
-              const sources = clusterSourcesMap[cluster.id] || [];
-              const dateStr = cluster.start
-                ? new Date(cluster.start).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                  })
-                : '';
+          {/* Editorial Toolbar: Time Window, Scope, Sort */}
+          <div className="storylines-toolbar">
+            <div className="toolbar-group">
+              <span className="toolbar-label">WINDOW:</span>
+              <button
+                type="button"
+                className={`toolbar-btn ${timeFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setTimeFilter('all')}
+              >
+                ALL DISPATCHES
+              </button>
+              <span className="source-separator" aria-hidden="true">|</span>
+              <button
+                type="button"
+                className={`toolbar-btn ${timeFilter === 'today' ? 'active' : ''}`}
+                onClick={() => setTimeFilter('today')}
+              >
+                TODAY ({todayDateStr})
+              </button>
+              <span className="source-separator" aria-hidden="true">|</span>
+              <button
+                type="button"
+                className={`toolbar-btn ${timeFilter === '24h' ? 'active' : ''}`}
+                onClick={() => setTimeFilter('24h')}
+              >
+                PAST 24H
+              </button>
+            </div>
 
-              return (
-                <div
-                  key={cluster.id}
-                  className={`storyline-card ${selectedClusterId === cluster.id ? 'active' : ''}`}
-                  onClick={() => setSelectedClusterId(cluster.id)}
-                >
-                  <div className="storyline-meta">
-                    <span className="storyline-badge">Cluster #{cluster.id}</span>
-                    <span className="storyline-articles-badge">
-                      {cluster.article_count} {cluster.article_count === 1 ? 'article' : 'articles'}
-                    </span>
-                    {dateStr && <span className="storyline-date">{dateStr}</span>}
-                  </div>
+            <div className="toolbar-group">
+              <span className="toolbar-label">SCOPE:</span>
+              <button
+                type="button"
+                className={`toolbar-btn ${scopeFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setScopeFilter('all')}
+              >
+                ALL TOPICS
+              </button>
+              <span className="source-separator" aria-hidden="true">|</span>
+              <button
+                type="button"
+                className={`toolbar-btn ${scopeFilter === 'multi' ? 'active' : ''}`}
+                onClick={() => setScopeFilter('multi')}
+              >
+                DEVELOPING (2+ ARTICLES)
+              </button>
+            </div>
 
-                  <h3 className="storyline-label">{cluster.label}</h3>
-
-                  <div className="storyline-footer">
-                    <div className="storyline-sources">
-                      {sources.map((s) => (
-                        <span
-                          key={s}
-                          className={`source-mini-badge source-${s.toLowerCase()}`}
-                        >
-                          {s.toUpperCase()}
-                        </span>
-                      ))}
-                    </div>
-                    <span className="storyline-action">Read story ↗</span>
-                  </div>
-                </div>
-              );
-            })}
+            <div className="toolbar-group">
+              <span className="toolbar-label">SORT:</span>
+              <button
+                type="button"
+                className={`toolbar-btn ${sortBy === 'newest' ? 'active' : ''}`}
+                onClick={() => setSortBy('newest')}
+              >
+                NEWEST FIRST
+              </button>
+              <span className="source-separator" aria-hidden="true">|</span>
+              <button
+                type="button"
+                className={`toolbar-btn ${sortBy === 'largest' ? 'active' : ''}`}
+                onClick={() => setSortBy('largest')}
+              >
+                MOST COVERED
+              </button>
+            </div>
           </div>
+
+          {visibleClusters.length === 0 ? (
+            <div className="timeline-empty" style={{ minHeight: '160px', padding: '2rem 1rem' }}>
+              <h3 className="empty-heading">No matching storylines</h3>
+              <p className="empty-subline">
+                No dispatches found for the selected window or filters. Try switching to &quot;ALL DISPATCHES&quot;.
+              </p>
+            </div>
+          ) : (
+            <div className="storylines-grid">
+              {visibleClusters.map((cluster) => {
+                const sources = clusterSourcesMap[cluster.id] || [];
+                const startDate = cluster.start ? new Date(cluster.start) : null;
+                const endDate = cluster.end ? new Date(cluster.end) : null;
+                const startStr = startDate
+                  ? startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                  : '';
+                const endStr = endDate
+                  ? endDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                  : '';
+                const dateDisplay =
+                  startStr && endStr && startStr !== endStr
+                    ? `${startStr} – ${endStr}`
+                    : endStr || startStr;
+
+                return (
+                  <div
+                    key={cluster.id}
+                    className={`storyline-card ${selectedClusterId === cluster.id ? 'active' : ''}`}
+                    onClick={() => setSelectedClusterId(cluster.id)}
+                  >
+                    <div className="storyline-meta">
+                      <span className="storyline-badge">Cluster #{cluster.id}</span>
+                      <span className="storyline-articles-badge">
+                        {cluster.article_count} {cluster.article_count === 1 ? 'article' : 'articles'}
+                      </span>
+                      {dateDisplay && <span className="storyline-date">{dateDisplay}</span>}
+                    </div>
+
+                    <h3 className="storyline-label">{cluster.label}</h3>
+
+                    <div className="storyline-footer">
+                      <div className="storyline-sources">
+                        {sources.map((s) => (
+                          <span
+                            key={s}
+                            className={`source-mini-badge source-${s.toLowerCase()}`}
+                          >
+                            {s.toUpperCase()}
+                          </span>
+                        ))}
+                      </div>
+                      <span className="storyline-action">Read story ↗</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       )}
 
