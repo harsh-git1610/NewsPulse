@@ -1,5 +1,7 @@
 @import 'vis-timeline/styles/vis-timeline-graph2d.min.css';
 
+/* NewsPulse Design System – globals.css */
+
 /* ==========================================================================
    NewsPulse Design System Tokens
    ========================================================================== */
@@ -351,8 +353,8 @@ a {
   background: var(--ink);
   border: 1px solid var(--rule);
   border-radius: 2px;
-  overflow: hidden;
-  min-height: 420px;
+  /* Do not set overflow: hidden — vis-timeline controls its own vertical scroll */
+  min-height: 560px;
 }
 
 /* Baseline ruler line running full width */
@@ -369,7 +371,21 @@ a {
 
 .vis-container {
   width: 100%;
-  height: 440px;
+  height: 560px;
+}
+
+/* Priority label: small dim caption above the chart, right-aligned */
+.timeline-priority-label {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-family: var(--font-public-sans), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--dim);
+  z-index: 5;
+  pointer-events: none;
 }
 
 /* Timeline Empty & Skeleton States */
@@ -450,11 +466,32 @@ a {
   border-color: var(--rule) !important;
 }
 
+/* Time axis minor ticks (hours) */
 .vis-time-axis .vis-text {
   color: var(--dim) !important;
   font-family: var(--font-public-sans), sans-serif !important;
   font-size: 11px !important;
   padding-top: 6px !important;
+}
+
+/* Hide vis-timeline's stray "0" tick:
+   The library renders a label at absolute x=0 (left edge) before the first
+   real date tick whenever there's leading space. Because our format functions
+   return '' for pre-2020 dates, this tick has empty content — but in some
+   versions a raw "0" is emitted before the custom formatter runs.
+   We hide any axis text element that is empty or literally "0". */
+.vis-time-axis .vis-text:empty {
+  display: none !important;
+}
+
+/* Time axis major ticks (e.g. "Thu 24 Sep" day boundary marker) */
+.vis-time-axis .vis-text.vis-major {
+  color: var(--paper) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  padding-top: 4px !important;
+  display: block !important;
+  visibility: visible !important;
 }
 
 .vis-time-axis .vis-grid.vis-minor {
@@ -475,67 +512,128 @@ a {
 
 /* Vis-timeline item styling:
    Cluster blocks rise upward from baseline.
-   Color: --signal fill at low opacity with a --signal 1px top border;
+   Color: --signal fill at low opacity with a --signal 2px top border;
    on hover, border becomes --wire. */
 .vis-item.editorial-timeline-item {
-  background-color: rgba(92, 138, 160, 0.16) !important;
-  border: none !important;
-  border-top: 1px solid var(--signal) !important;
-  border-radius: 2px 2px 0 0 !important;
-  box-shadow: none !important;
+  height: 42px !important;
+  line-height: 1 !important;
+  background-color: #242D35 !important;
+  border: 1px solid rgba(243, 239, 230, 0.12) !important;
+  border-top: 2px solid var(--signal) !important;
+  border-radius: 2px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+  box-sizing: border-box !important;
+  color: #FFFFFF !important;
   cursor: pointer;
+  overflow: hidden !important;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .vis-item.editorial-timeline-item:hover {
-  border-top: 1px solid var(--wire) !important;
-  background-color: rgba(196, 67, 46, 0.12) !important;
+  background-color: #2F3942 !important;
+  border-top: 2px solid var(--wire) !important;
+  z-index: 10 !important;
 }
 
 .vis-item.editorial-timeline-item.vis-selected,
 .vis-item.editorial-timeline-item.selected {
+  background-color: #382926 !important;
+  border-color: rgba(196, 67, 46, 0.5) !important;
   border-top: 2px solid var(--wire) !important;
-  background-color: rgba(196, 67, 46, 0.22) !important;
+  z-index: 10 !important;
 }
 
+/* Strictly contain content inside allocated item bounds to prevent row bleeding */
 .vis-item .vis-item-overflow {
-  overflow: visible !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .vis-item .vis-item-content {
   padding: 0 !important;
   width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  color: #FFFFFF !important;
 }
 
 .editorial-block-content {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 6px;
-  width: 100%;
-  padding: 4px 6px;
-  overflow: hidden;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 0 8px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 
-/* Cluster label: Fraunces, small size, truncated with ellipsis if overflowing */
+/* Cluster label: Fraunces, bright high-contrast paper tint (>7:1 contrast ratio) */
 .editorial-block-title {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--paper);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
-  letter-spacing: -0.01em;
+  font-family: var(--font-fraunces), Georgia, serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #F3EFE6 !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+  letter-spacing: -0.01em !important;
 }
 
+/* Article count badge: crisp distinct pill */
 .editorial-block-pill {
-  font-family: var(--font-public-sans), sans-serif;
-  font-size: 10px;
-  color: var(--dim);
-  flex-shrink: 0;
+  font-family: var(--font-public-sans), sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #F3EFE6 !important;
+  background: rgba(243, 239, 230, 0.16) !important;
+  border: 1px solid rgba(243, 239, 230, 0.22) !important;
+  padding: 1px 5px !important;
+  border-radius: 2px !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
 }
+
+/* Custom scrollbars inside vis-timeline when verticalScroll is active */
+.vis-panel.vis-center::-webkit-scrollbar,
+.vis-panel.vis-bottom::-webkit-scrollbar,
+.vis-timeline::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.vis-panel.vis-center::-webkit-scrollbar-thumb,
+.vis-panel.vis-bottom::-webkit-scrollbar-thumb,
+.vis-timeline::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 3px;
+}
+.vis-panel.vis-center::-webkit-scrollbar-thumb:hover,
+.vis-panel.vis-bottom::-webkit-scrollbar-thumb:hover,
+.vis-timeline::-webkit-scrollbar-thumb:hover {
+  background: var(--dim);
+}
+
+/* Vis-timeline tooltip dark editorial styling */
+.vis-tooltip {
+  position: absolute;
+  z-index: 10000;
+  background: var(--ink) !important;
+  border: 1px solid var(--rule) !important;
+  border-left: 2px solid var(--signal) !important;
+  color: var(--paper) !important;
+  font-family: var(--font-public-sans), sans-serif !important;
+  font-size: 11px !important;
+  padding: 6px 10px !important;
+  border-radius: 2px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+  max-width: 320px !important;
+  white-space: normal !important;
+  pointer-events: none;
+}
+
 
 /* ==========================================================================
    Cluster Detail Drawer (components/ClusterModal.tsx)

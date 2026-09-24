@@ -190,6 +190,18 @@ export default function HomePage() {
     sortBy,
   ]);
 
+  // Priority clusters for the timeline chart:
+  // Only show clusters covered by multiple sources (3+ articles).
+  // Capped at top 25 by article_count so the chart stays readable.
+  const PRIORITY_MIN_ARTICLES = 3;
+  const PRIORITY_MAX_CLUSTERS = 25;
+  const priorityClusters = useMemo(() => {
+    return [...visibleClusters]
+      .filter((c) => c.article_count >= PRIORITY_MIN_ARTICLES)
+      .sort((a, b) => b.article_count - a.article_count)
+      .slice(0, PRIORITY_MAX_CLUSTERS);
+  }, [visibleClusters]);
+
   return (
     <main className="page-container">
       <Header
@@ -221,10 +233,11 @@ export default function HomePage() {
       )}
 
       <TimelineView
-        clusters={visibleClusters}
+        clusters={priorityClusters}
         selectedClusterId={selectedClusterId}
         onSelectCluster={(id) => setSelectedClusterId(id)}
         loading={loading}
+        priorityLabel={`Showing ${priorityClusters.length} priority stories (3+ sources)`}
       />
 
       {/* News Storylines Feed */}
