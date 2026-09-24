@@ -20,6 +20,9 @@ export default function TimelineView({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const timelineRef = useRef<any>(null);
   const dataSetRef = useRef<any>(null);
+  // Stable ref so the mount-only init effect never needs onSelectCluster as a dep
+  const onSelectRef = useRef(onSelectCluster);
+  useEffect(() => { onSelectRef.current = onSelectCluster; });
   const [isTimelineReady, setIsTimelineReady] = useState(false);
 
   // Initialize Timeline exactly once
@@ -68,10 +71,13 @@ export default function TimelineView({
           if (properties.items && properties.items.length > 0) {
             const clusterId = Number(properties.items[0]);
             if (!isNaN(clusterId)) {
-              onSelectCluster(clusterId);
+              // Use stable ref to avoid re-mounting the Timeline on every render
+              onSelectRef.current(clusterId);
             }
           }
         });
+
+        console.log('[TimelineView] vis-timeline instance created.');
 
         setIsTimelineReady(true);
       } catch (err) {
@@ -86,12 +92,17 @@ export default function TimelineView({
       if (timelineRef.current) {
         timelineRef.current.destroy();
         timelineRef.current = null;
+        dataSetRef.current = null;
       }
     };
-  }, [onSelectCluster]);
+  }, []); // mount-only — never re-runs
 
+  // Push fresh data into the DataSet whenever clusters/selection changes.
+  // Uses DataSet.clear() + DataSet.add() — vis-timeline's reactive update
+  // pattern — so the already-initialised Timeline re-renders automatically
+  // without recreating the instance.
   useEffect(() => {
-    if (!isTimelineReady) return;
+    if (!isTimelineReady || !dataSetRef.current) return;
 
     const items = clusters.map((cluster) => {
       const startTime = cluster.start ? new Date(cluster.start) : new Date();
@@ -102,8 +113,8 @@ export default function TimelineView({
       }
 
       const isSelected = selectedClusterId === cluster.id;
-      // Height scaled by intensity between 24px and 120px
-      const blockHeight = Math.round(24 + (cluster.intensity || 0) * 96);
+      // Height scaled by intensity between 28px and 120px
+      const blockHeight = Math.round(28 + (cluster.intensity || 0) * 92);
 
       const titleTooltip = `
         <div style="font-family: var(--font-public-sans), sans-serif; font-size: 12px; line-height: 1.4; padding: 4px;">
@@ -133,15 +144,17 @@ export default function TimelineView({
       };
     });
 
-    if (timelineRef.current) {
-      try {
-        timelineRef.current.setItems(items);
-        if (items.length > 0) {
-          timelineRef.current.fit({ animation: { duration: 300, easingFunction: 'easeInOutQuad' } });
-        }
-      } catch (e) {
-        console.error('Failed to set timeline items:', e);
+    // Step-3 diagnostic: confirm count at the moment DataSet is updated
+    console.log(`[TimelineView] DataSet update → mapped item count: ${items.length}`);
+
+    try {
+      dataSetRef.current.clear();
+      dataSetRef.current.add(items);
+      if (items.length > 0 && timelineRef.current) {
+        timelineRef.current.fit({ animation: { duration: 300, easingFunction: 'easeInOutQuad' } });
       }
+    } catch (e) {
+      console.error('[TimelineView] Failed to update DataSet:', e);
     }
   }, [clusters, isTimelineReady, selectedClusterId]);
 
