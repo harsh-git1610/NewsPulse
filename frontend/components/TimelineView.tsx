@@ -152,14 +152,15 @@ export default function TimelineView({
         // vis-timeline occasionally renders a label at pixel-x=0 whose text content
         // is an empty string or the raw string "0" (not a formatted time label).
         // We use a MutationObserver to remove these after every DOM paint.
-        function scrubZeroTick(root: HTMLElement) {
-          root.querySelectorAll('.vis-time-axis .vis-text').forEach((el) => {
-            const text = (el as HTMLElement).innerText?.trim();
-            if (text === '0' || text === '') {
-              (el as HTMLElement).style.visibility = 'hidden';
-            }
-          });
-        }
+        const scrubZeroTick = (root: HTMLElement) => {
+  root.querySelectorAll('.vis-time-axis .vis-text').forEach((el) => {
+    const text = (el as HTMLElement).innerText?.trim();
+
+    if (text === '0' || text === '') {
+      (el as HTMLElement).style.visibility = 'hidden';
+    }
+  });
+};
 
         if (containerRef.current) {
           const observer = new MutationObserver(() => {
