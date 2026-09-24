@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: newspulse-api
+    runtime: node
+    rootDir: backend
+    buildCommand: |
+      pip install -r ../scraper/requirements.txt &&
+      npm install
+    startCommand: node app.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false        # You'll paste this in the Render dashboard
+      - key: PYTHON_BIN
+        value: python3
+      - key: FRONTEND_ORIGIN
+        sync: false        # You'll paste your Vercel URL here after deploying frontend
+      - key: PORT
+        value: 10000       # Render's default assigned port
