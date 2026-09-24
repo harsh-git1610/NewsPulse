@@ -1,9 +1,8 @@
 # NewsPulse — Topic-Clustered News Timeline
 
-**Live Demo: [https://news-pulse-flax.vercel.app/](https://news-pulse-flax.vercel.app/)   
-**Backend API: [https://newspulse-uvty.onrender.com/](https://newspulse-uvty.onrender.com/) 
-
-**Video Walkthrough (2–3 mins):[https://www.loom.com/share/6fa6e74799f64e5da9d3097513d2371d](https://www.loom.com/share/6fa6e74799f64e5da9d3097513d2371d) 
+Live Demo: [https://news-pulse-flax.vercel.app/](https://news-pulse-flax.vercel.app/)   
+Backend API: [https://newspulse-uvty.onrender.com/](https://newspulse-uvty.onrender.com/) 
+Video Walkthrough:[https://www.loom.com/share/6fa6e74799f64e5da9d3097513d2371d](https://www.loom.com/share/6fa6e74799f64e5da9d3097513d2371d) 
 ---
 
 ## Overview
