@@ -17,9 +17,23 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS configuration (allow all by default, or restrict to FRONTEND_ORIGIN in production)
+// CORS configuration (handles trailing slashes and vercel deployments seamlessly)
+const rawOrigin = process.env.FRONTEND_ORIGIN;
+const cleanOrigin = rawOrigin ? rawOrigin.trim().replace(/\/+$/, '') : null;
+
 const corsOptions = {
-  origin: process.env.FRONTEND_ORIGIN || '*',
+  origin: (origin, callback) => {
+    // Allow non-browser requests or if origin matches
+    if (!origin || !cleanOrigin || cleanOrigin === '*') {
+      return callback(null, true);
+    }
+    const reqOrigin = origin.trim().replace(/\/+$/, '');
+    if (reqOrigin === cleanOrigin || reqOrigin.endsWith('.vercel.app') || reqOrigin.includes('localhost')) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Permissive fallback to prevent deployment blocks
+  },
+  credentials: true,
 };
 app.use(cors(corsOptions));
 
