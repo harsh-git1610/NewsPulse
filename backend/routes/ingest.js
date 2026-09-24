@@ -11,7 +11,7 @@ const { validateParamId } = require('../middleware/validate');
  * 2. cluster.py (clustering)
  */
 function runPipeline(jobId) {
-  const scraperDir = path.resolve(__dirname, '..');
+  const scraperDir = path.resolve(__dirname, '..', '..', 'scraper');
   const pythonBin = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
 
   console.log(`[Job #${jobId}] Spawning scraper (${pythonBin} ingest.py)...`);

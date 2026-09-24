@@ -128,6 +128,7 @@ def extract_tfidf_matrix(corpus: List[str]) -> tuple[Any, Optional[np.ndarray]]:
     try:
         vectorizer = TfidfVectorizer(
             stop_words="english",
+            token_pattern=r"(?u)\b[a-zA-Z]{2,}\b",
             max_df=max_df,
             min_df=1,
             ngram_range=(1, 2),
@@ -140,6 +141,7 @@ def extract_tfidf_matrix(corpus: List[str]) -> tuple[Any, Optional[np.ndarray]]:
         try:
             fallback_vectorizer = TfidfVectorizer(
                 stop_words=None,
+                token_pattern=r"(?u)\b[a-zA-Z]{2,}\b",
                 max_df=1.0,
                 min_df=1,
                 ngram_range=(1, 2),
@@ -160,25 +162,63 @@ def generate_cluster_label(
     top_n: int = 3,
 ) -> str:
     """
-    Generate cluster label from the top terms of the cluster's averaged TF-IDF vector.
+    Generate clean, human-readable headlines for clusters:
+    - 1-article cluster: Uses the article's actual journalist-written title.
+    - Multi-article cluster: Selects the lead headline from the most central (medoid) article.
+    - Fallback: Cleaned, deduplicated, alphabetic TF-IDF keywords.
     """
+    if not cluster_indices:
+        return "General News"
+
+    # Case 1: Single article — use the real headline directly
+    if len(cluster_indices) == 1:
+        first_title = articles[cluster_indices[0]].get("title", "").strip()
+        if first_title:
+            return first_title
+
+    # Case 2: Multi-article cluster — find the most central article (medoid)
+    if tfidf_matrix is not None and len(cluster_indices) > 1:
+        try:
+            sub_matrix = tfidf_matrix[cluster_indices]
+            mean_vector = sub_matrix.mean(axis=0)
+            sims = cosine_similarity(sub_matrix, mean_vector).flatten()
+            best_idx = int(np.argmax(sims))
+            rep_article_idx = cluster_indices[best_idx]
+            rep_title = articles[rep_article_idx].get("title", "").strip()
+            if rep_title:
+                return rep_title
+        except Exception as err:
+            logger.debug(f"Representative headline selection fallback: {err}")
+
+    # Case 3: First available title
+    for idx in cluster_indices:
+        title = articles[idx].get("title", "").strip()
+        if title:
+            return title
+
+    # Case 4: Keyword fallback from TF-IDF
     if tfidf_matrix is not None and feature_names is not None and len(feature_names) > 0:
         sub_matrix = tfidf_matrix[cluster_indices]
         mean_vector = np.asarray(sub_matrix.mean(axis=0)).flatten()
         nonzero_indices = np.where(mean_vector > 0)[0]
         if len(nonzero_indices) > 0:
             sorted_indices = nonzero_indices[np.argsort(-mean_vector[nonzero_indices])]
-            top_terms = [feature_names[idx] for idx in sorted_indices[:top_n]]
+            seen_words = set()
+            top_terms = []
+            for idx in sorted_indices:
+                term = str(feature_names[idx]).strip()
+                # Exclude purely numeric or duplicate words
+                words = term.split()
+                if any(w in seen_words for w in words):
+                    continue
+                for w in words:
+                    seen_words.add(w)
+                top_terms.append(term)
+                if len(top_terms) >= top_n:
+                    break
             if top_terms:
-                return ", ".join(top_terms)
+                return ", ".join(top_terms).title()
 
-    # Fallback to key title words if TF-IDF yields no terms
-    first_title = articles[cluster_indices[0]].get("title", "").strip()
-    if first_title:
-        words = [w for w in first_title.split() if len(w) > 3]
-        if words:
-            return ", ".join(words[:top_n])
-        return first_title[:60]
     return "General News"
 
 
